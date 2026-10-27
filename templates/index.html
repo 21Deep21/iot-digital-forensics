@@ -1,0 +1,102 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Network Forensics Analyzer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    <main class="container">
+        <header>
+            <h1>Network Traffic Forensics</h1>
+            <p>Phishing-to-Compromise Reconstruction</p>
+        </header>
+<nav class="navigation">
+    <a href="/">Simulation Analysis</a>
+    <a href="/external">External PCAP Analysis</a>
+</nav>
+
+        <section class="panel">
+            <h2>Upload Network Evidence</h2>
+            <form method="POST" enctype="multipart/form-data">
+                <input type="file" name="pcap" accept=".pcap,.pcapng" required>
+                <button type="submit">Analyze Capture</button>
+            </form>
+        </section>
+
+        {% if error %}
+            <p class="error">{{ error }}</p>
+        {% endif %}
+
+        {% if result %}
+        <section class="stats">
+            <div class="stat">
+                <span>Total Packets</span>
+                <strong>{{ result.packets }}</strong>
+            </div>
+            <div class="stat">
+                <span>Detected Events</span>
+                <strong>{{ result.events }}</strong>
+            </div>
+            <div class="stat">
+                <span>C2 Beacons</span>
+                <strong>{{ result.beacons }}</strong>
+            </div>
+            <div class="stat">
+                <span>Avg. Beacon Interval</span>
+                <strong>{{ result.average }}s</strong>
+            </div>
+        </section>
+
+        <section class="panel">
+            <h2>Reconstructed Attack Timeline</h2>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Event</th>
+                            <th>Source IP</th>
+                            <th>Destination IP</th>
+                            <th>Request</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for event in result.timeline %}
+                        <tr>
+                            <td>{{ event.timestamp }}</td>
+                            <td>{{ event.event }}</td>
+                            <td>{{ event.source_ip }}</td>
+                            <td>{{ event.destination_ip }}</td>
+                            <td>{{ event.request_path }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="panel">
+            <h2>Evidence Integrity</h2>
+            <p>SHA-256 Hash:</p>
+            <code>{{ result.sha256 }}</code>
+        </section>
+
+        <<section class="downloads">
+    <a href="{{ url_for('download_investigation',
+                       investigation_id=result.investigation_id,
+                       report_type='external') }}">
+        Download JSON Forensic Report
+    </a>
+</section>
+        {% endif %}
+
+        <footer>
+            Advanced Digital Forensics | Educational Simulation
+        </footer>
+    </main>
+</body>
+</html>

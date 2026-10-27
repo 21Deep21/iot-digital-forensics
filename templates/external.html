@@ -1,0 +1,148 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1">
+    <title>External PCAP Analysis</title>
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<main class="container">
+
+    <header>
+        <h1>External PCAP Analysis</h1>
+        <p>Network Traffic Forensics</p>
+    </header>
+
+    <nav class="navigation">
+        <a href="/">Simulation Analysis</a>
+        <a href="/external">External PCAP Analysis</a>
+    </nav>
+
+    <section class="panel">
+        <h2>Upload Network Evidence</h2>
+
+        <form method="POST"
+              enctype="multipart/form-data">
+
+            <input type="file"
+                   name="pcap"
+                   accept=".pcap,.pcapng"
+                   required>
+
+            <button type="submit">
+                Analyze PCAP
+            </button>
+        </form>
+    </section>
+
+    {% if error %}
+        <p class="error">{{ error }}</p>
+    {% endif %}
+
+    {% if result %}
+
+    <section class="stats">
+        <div class="stat">
+            <span>DNS Queries</span>
+            <strong>{{ result.summary.dns_queries }}</strong>
+        </div>
+
+        <div class="stat">
+            <span>HTTP Events</span>
+            <strong>{{ result.summary.http_events }}</strong>
+        </div>
+
+        <div class="stat">
+            <span>TLS SNI Records</span>
+            <strong>{{ result.summary.tls_sni_records }}</strong>
+        </div>
+
+        <div class="stat">
+            <span>TCP Connections</span>
+            <strong>{{ result.summary.tcp_connections_observed }}</strong>
+        </div>
+    </section>
+
+    <section class="panel">
+        <h2>Executable Download Indicators</h2>
+
+        {% for finding in result.findings %}
+        <div class="finding">
+            <p><strong>Requested file:</strong>
+                {{ finding.requested_file }}</p>
+
+            <p><strong>Request frame:</strong>
+                {{ finding.request_frame }}</p>
+
+            <p><strong>Source:</strong>
+                {{ finding.source_ip }}</p>
+
+            <p><strong>Destination:</strong>
+                {{ finding.destination_ip }}</p>
+
+            <p><strong>HTTP result:</strong>
+                {{ finding.http_status }}</p>
+
+            <h3>Subsequent TCP Connections</h3>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Frame</th>
+                            <th>Destination</th>
+                            <th>Port</th>
+                            <th>Stream</th>
+                            <th>Delay</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for connection in finding.subsequent_connections %}
+                        <tr>
+                            <td>{{ connection.frame }}</td>
+                            <td>{{ connection.destination_ip }}</td>
+                            <td>{{ connection.destination_port }}</td>
+                            <td>{{ connection.tcp_stream }}</td>
+                            <td>{{ connection.seconds_after }}s</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <p class="note">{{ finding.note }}</p>
+        </div>
+        {% else %}
+        <p>No executable download indicators found.</p>
+        {% endfor %}
+    </section>
+
+    <section class="panel">
+        <h2>Evidence Integrity</h2>
+        <p><strong>File:</strong> {{ result.evidence_file }}</p>
+        <p><strong>SHA-256:</strong></p>
+        <code>{{ result.sha256 }}</code>
+    </section>
+
+
+<section class="downloads">
+    <a href="{{ url_for('download_investigation',
+                       investigation_id=result.investigation_id,
+                       report_type='external') }}">
+        Download JSON Forensic Report
+    </a>
+</section>
+
+    {% endif %}
+
+    <footer>
+        Advanced Digital Forensics | Educational Project
+    </footer>
+
+</main>
+</body>
+</html>

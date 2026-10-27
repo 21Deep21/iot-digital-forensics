@@ -1,0 +1,30 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Environment and editor files
+.env
+.vscode/
+
+# Captured network evidence
+captures/*.pcap
+captures/*.pcapng
+captures/external/
+captures/simulation/
+captures/uploads/
+
+# Generated forensic reports
+reports/
+
+# Temporary files
+*.log
+*.tmp
+
+# Development backups
+app_backup.py
+app_before_cleanup.py
+app_before_final_update.py
+templates/*_backup.html
+static/*_backup.css
