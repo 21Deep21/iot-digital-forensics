@@ -27,4 +27,4 @@ app_backup.py
 app_before_cleanup.py
 app_before_final_update.py
 templates/*_backup.html
-static/*_backup.css
+static/*_backup.cssREADME_backup.md
