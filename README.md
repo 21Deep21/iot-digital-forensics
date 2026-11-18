@@ -1,236 +1,137 @@
-# Network Traffic Forensics: Phishing-to-Compromise Reconstruction
+# Network Log Forensics and Incident Reconstruction Using Zeek Evidence
 
-**Advanced Digital Forensics — Academic Project**
+**Advanced Digital Forensics — Final Project**
 
-**Group:** L1ARS
+## Project Overview
 
-## 1. Project Overview
+This project demonstrates a digital forensic investigation using publicly available Zeek network connection logs. It focuses on evidence acquisition, integrity verification, suspicious activity examination, incident timeline reconstruction, and forensic reporting.
 
-This project demonstrates how network traffic evidence can be used to reconstruct a simulated phishing-to-compromise incident.
+Unlike a conventional network security application, the primary objective is to investigate recorded evidence and document findings that can be independently verified.
 
-It combines a controlled phishing simulation with PCAP analysis to identify network events, reconstruct chronological timelines, investigate suspicious connections, and generate forensic reports.
+## Objectives
 
-The project also supports analysis of external PCAP files for broader network forensic investigation.
+1. Acquire existing network forensic evidence from a documented public source.
+2. Verify evidence integrity using SHA-256 hashing.
+3. Examine network connections, protocols, IP addresses, ports, and connection states.
+4. Identify and investigate suspicious communication patterns.
+5. Reconstruct a chronological incident timeline.
+6. Produce an evidence-backed forensic case report.
 
-## 2. Objectives
+## Evidence Source
 
-- Simulate a phishing interaction in a controlled local environment.
-- Capture network traffic using Wireshark.
-- Analyze PCAP and PCAPNG evidence.
-- Extract DNS, HTTP, TCP, and TLS metadata.
-- Identify executable-download indicators.
-- Examine simulated C2 beaconing behavior.
-- Correlate network events chronologically.
-- Generate forensic reports and SHA-256 evidence hashes.
+**Dataset:** CTU-Malware-Capture-Botnet-230-1  
+**Scenario:** NjRAT malware-related network traffic  
+**Provider:** Stratosphere Laboratory  
+**Evidence:** `labeled-conn.log`
 
-## 3. Technologies Used
+The evidence is a 1,000-line excerpt distributed through the Stratosphere IPS `security-datasets-for-testing` GitHub repository.
 
-| Technology | Purpose |
+Source: https://github.com/stratosphereips/security-datasets-for-testing/tree/main/001-zeek-scenario-malicious
+
+The current evidence does not establish that the investigated host is an IoT device. The case is therefore presented as network log forensics, not a verified IoT-device compromise.
+
+## Forensic Methodology
+
+**Acquisition → Preservation → Examination → Analysis → Reconstruction → Reporting**
+
+The original log is preserved, and its SHA-256 hash is verified against the published Git LFS object hash.
+
+The investigation script parses Zeek connection records, examines published labels, identifies repeated connections, calculates timing intervals, and exports a forensic timeline.
+
+## Evidence Integrity
+
+SHA-256:
+
+`0871016451ce1ebf8713bc0b117079c490615290cbff034b735d096b35722e82`
+
+The downloaded evidence matched the published hash during verification.
+
+## Investigation Findings
+
+| Parameter | Result |
 |---|---|
-| Python 3 | Core implementation |
-| Flask | Web interface and simulation server |
-| Scapy | Packet analysis |
-| Wireshark | Packet capture and inspection |
-| TShark | Protocol extraction and forensic analysis |
-| Requests | Simulated HTTP requests |
-| HTML/CSS | Dashboard interface |
-| Fedora Linux | Development and execution environment |
+| Parsed connection records | 992 |
+| Background-labeled records | 739 |
+| Malicious-labeled records | 244 |
+| Benign-labeled records | 9 |
+| Investigated source | 192.168.1.115 |
+| Investigated destination | 41.108.179.197:1177 |
+| Matching connection attempts | 237 |
+| Connection state | S0 |
+| Average interval | 11.566 seconds |
+| Minimum interval | 8.985 seconds |
+| Maximum interval | 17.002 seconds |
 
-## 4. Project Architecture
+The investigated host repeatedly attempted TCP connections to the same destination.
+
+All 237 matching records have Zeek state `S0`, indicating that no response was observed.
+
+The published dataset labels these records as malicious. The observed timing suggests automated retry behavior, but the evidence does not establish a successful command-and-control session.
+
+## Tools and Technologies
+
+- Fedora Linux
+- Python 3
+- Zeek connection logs
+- SHA-256 hashing
+- CSV timeline generation
+- Git and GitHub
+
+The repository also retains an earlier PCAP analysis prototype using Flask, Scapy, Wireshark, and TShark. That prototype is supplementary to the primary log-forensic investigation.
+
+## Project Structure
 
 ```text
-Network Traffic Forensics
-         |
-         +-- Controlled Simulation
-         |       |
-         |       +-- Phishing interaction
-         |       +-- Dummy payload retrieval
-         |       +-- Simulated C2 beaconing
-         |       +-- Wireshark packet capture
-         |
-         +-- Forensic Analysis
-         |       |
-         |       +-- Simulation PCAP analysis
-         |       +-- External PCAP analysis
-         |       +-- DNS, HTTP, TCP, TLS extraction
-         |       +-- Event correlation
-         |
-         +-- Flask Dashboard
-                 |
-                 +-- Upload evidence
-                 +-- View forensic findings
-                 +-- Download reports
+iot/
+├── analysis/
+│   └── forensic_investigation.py
+├── evidence/
+│   └── labeled-conn.log
+└── reports/
+    ├── incident_timeline.csv
+    └── forensic_case_report.txt
 ```
 
-## 5. Features
+## Running the Investigation
 
-### Controlled Simulation
-
-A local Flask server simulates a phishing interaction, dummy payload retrieval, and periodic HTTP requests representing C2 communication.
-
-All activity is harmless and runs on localhost.
-
-### Network Traffic Capture
-
-Wireshark/TShark captures the simulated network traffic and saves it in PCAPNG format.
-
-### Simulation Analysis
-
-The analyzer identifies predefined simulation endpoints and reconstructs their chronological sequence.
-
-### External PCAP Analysis
-
-The external analyzer extracts:
-
-- DNS queries and queried domains
-- HTTP requests and responses
-- TLS Server Name Indication (SNI) metadata
-- TCP connection initiation events
-- Executable-download indicators
-- Connections occurring shortly after suspicious downloads
-
-### Evidence Integrity
-
-SHA-256 hashes are calculated for uploaded captures.
-
-Uploaded evidence is saved using unique filenames to prevent accidental overwriting.
-
-### Forensic Reporting
-
-Each investigation receives a unique identifier and its own reports.
-
-## 6. Installation
-
-### Requirements
-
-- Fedora Linux or another compatible Linux distribution
-- Python 3
-- Wireshark and TShark
-
-Install Wireshark on Fedora:
+Clone the repository:
 
 ```bash
-sudo dnf install wireshark wireshark-cli
+git clone https://github.com/21Deep21/iot-digital-forensics.git
+cd iot-digital-forensics
 ```
 
-Create a Python virtual environment:
+Run the forensic investigation:
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
+python3 iot/analysis/forensic_investigation.py
 ```
 
-Install Python dependencies:
+The script verifies evidence integrity before processing the log.
 
-```bash
-python -m pip install -r requirements.txt
-```
+The results are saved in `iot/reports/`.
 
-## 7. Running the Project
+No additional Python packages are required for this specific investigation script.
 
-### Start the forensic dashboard
+## Forensic Interpretation
 
-```bash
-python app.py
-```
+The investigation identifies repeated unanswered TCP connection attempts associated with a published NjRAT malware-traffic scenario.
 
-Open:
+The analysis distinguishes the source dataset's malicious labels from observations independently derived from the connection records.
 
-`http://127.0.0.1:8000`
+## Limitations
 
-### Run the controlled simulation
+- The evidence is an excerpt rather than a complete capture.
+- The source host's IoT-device identity is unverified.
+- The numeric timestamps are preserved as recorded.
+- The analysis does not establish successful malware execution or C2 communication.
+- The published labels are not independently validated.
+- The evidence hash verifies file consistency but does not establish a complete chain of custody.
 
-In another terminal:
+## Conclusion
 
-```bash
-python simulation/phishing_server.py
-```
+This project demonstrates a reproducible network log forensic investigation using existing evidence.
 
-In a separate terminal:
+The primary contribution is the structured examination of network records, preservation of evidence integrity, reconstruction of suspicious activity, and documentation of findings with traceable evidence references.
 
-```bash
-python simulation/attack_simulator.py
-```
-
-The simulator generates HTTP traffic representing the predefined attack sequence.
-
-### Capture network traffic
-
-On Fedora, capture loopback traffic using Wireshark or TShark.
-
-Ensure packet capture permissions and output-directory permissions are configured appropriately.
-
-### Analyze a capture
-
-Open the dashboard and upload a PCAP or PCAPNG file.
-
-Use the Simulation Analysis page for the controlled lab capture and External PCAP Analysis for general traffic investigation.
-
-## 8. Experimental Results
-
-### Controlled Simulation
-
-| Metric | Result |
-|---|---|
-| Captured packets | 84 |
-| Reconstructed events | 7 |
-| Simulated C2 requests | 5 |
-| Average beacon interval | 3.005 seconds |
-
-### External Traffic Analysis
-
-| Metric | Result |
-|---|---|
-| Captured packets | 42,497 |
-| DNS queries | 170 |
-| Unique DNS names | 71 |
-| HTTP events | 32 |
-| TLS SNI records | 92 |
-| TCP connections observed | 184 |
-| Executable-download indicators | 1 |
-
-The external capture included an HTTP request for `runner_ilove.exe` and an HTTP 200 response.
-
-Subsequent TCP connections were identified through temporal correlation. Their malicious nature has not been independently established.
-
-## 9. Forensic Methodology
-
-1. Acquire network evidence.
-2. Preserve the original capture.
-3. Calculate its SHA-256 hash.
-4. Extract network protocol metadata.
-5. Identify potentially relevant events.
-6. Correlate events using timestamps and packet references.
-7. Generate an investigation report.
-8. Interpret findings while acknowledging evidentiary limitations.
-
-## 10. Limitations
-
-- The simulation uses predefined HTTP endpoints.
-- The controlled experiment does not execute real malware.
-- Malware execution cannot be established using network evidence alone.
-- Suspicious connections are not automatically confirmed as C2.
-- TLS analysis is limited to visible metadata.
-- JA3/JA3S fingerprinting is not implemented.
-- The current experiment does not use an isolated virtual machine.
-- The application is intended for trusted local academic use, not public deployment.
-
-## 11. Future Scope
-
-- Automated detection of periodic communication patterns.
-- More detailed TCP flow analysis.
-- Advanced encrypted-traffic metadata analysis.
-- Improved event correlation and classification.
-- Optional isolated VM-based laboratory setup.
-
-## 12. Conclusion
-
-The project demonstrates how network traffic can be captured, examined, and correlated to reconstruct a controlled phishing-to-compromise scenario.
-
-It also supports broader forensic investigation through analysis of external PCAP evidence.
-
-The primary focus is evidence-based network investigation, chronological reconstruction, and reproducible forensic reporting.
-
----
-
-**Disclaimer:** This project is developed strictly for educational and defensive digital forensics purposes.
+**Purpose:** Educational and defensive digital forensic investigation.
