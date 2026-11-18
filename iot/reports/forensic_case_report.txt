@@ -1,0 +1,49 @@
+NETWORK LOG FORENSIC INVESTIGATION
+=======================================================
+
+CASE INFORMATION
+Case ID: ADF-NJRAT-001
+Evidence: labeled-conn.log
+Source: Stratosphere IPS security-datasets-for-testing
+Scenario: CTU-Malware-Capture-Botnet-230-1
+Published malware association: NjRAT
+Dataset scope: First 1,000 log lines
+
+EVIDENCE INTEGRITY
+SHA-256: 0871016451ce1ebf8713bc0b117079c490615290cbff034b735d096b35722e82
+Integrity verification: PASSED
+
+DATASET EXAMINATION
+Parsed connection records: 992
+Background records: 739
+Malicious-labeled records: 244
+Benign records: 9
+
+FINDING 01 - REPEATED TCP CONNECTION ATTEMPTS
+Source: 192.168.1.115
+Destination: 41.108.179.197:1177
+Matching records: 237
+Connection states: {'S0': 237}
+Average interval: 11.566 seconds
+Minimum interval: 8.985 seconds
+Maximum interval: 17.002 seconds
+
+FORENSIC INTERPRETATION
+Repeated TCP attempts were observed toward the same
+external destination. The published dataset labels
+these flows as malicious.
+S0 indicates that no response was observed.
+Successful C2 communication is not established.
+
+LIMITATIONS
+The source file is an excerpt, not a complete capture.
+The numeric timestamps are preserved as recorded.
+The log does not establish IoT-device provenance.
+No endpoint evidence confirms malware execution.
+
+CONCLUSION
+The evidence supports repeated, unanswered TCP
+connection attempts associated with a published
+NjRAT malware-traffic scenario.
+
+Timeline: incident_timeline.csv
