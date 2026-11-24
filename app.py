@@ -2,12 +2,11 @@
 from pathlib import Path
 from datetime import datetime, timezone
 from uuid import uuid4
-from collections import defaultdict
+from collections import Counter
 import csv
 import hashlib
 import json
 import statistics
-import subprocess
 
 from flask import (
     Flask,
@@ -20,11 +19,12 @@ from werkzeug.utils import secure_filename
 from scapy.all import PcapReader, IP, TCP, Raw
 
 from analysis.external_pcap_analyzer import analyze_external_pcap
+from iot.analysis.forensic_investigation import analyze as analyze_zeek
 
 
-# --------------------------------------------------
+# ==================================================
 # PROJECT CONFIGURATION
-# --------------------------------------------------
+# ==================================================
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -34,11 +34,16 @@ REPORTS = BASE_DIR / "reports"
 SIMULATION_DIR = CAPTURES / "simulation"
 EXTERNAL_DIR = CAPTURES / "external" / "uploads"
 
+IOT_DIR = BASE_DIR / "iot"
+IOT_EVIDENCE = IOT_DIR / "evidence" / "labeled-conn.log"
+IOT_REPORTS = IOT_DIR / "reports"
+
 for directory in (
     CAPTURES,
     REPORTS,
     SIMULATION_DIR,
     EXTERNAL_DIR,
+    IOT_REPORTS,
 ):
     directory.mkdir(parents=True, exist_ok=True)
 
@@ -55,13 +60,13 @@ EVENTS = {
 }
 
 
-# --------------------------------------------------
+# ==================================================
 # EVIDENCE MANAGEMENT
-# --------------------------------------------------
+# ==================================================
 
 def save_evidence(uploaded_file, folder):
     """
-    Save evidence with a unique filename.
+    Preserve uploaded PCAP evidence with a unique filename.
     Existing evidence is never overwritten.
     """
 
@@ -112,9 +117,9 @@ def investigation_directory(investigation_id):
     return path
 
 
-# --------------------------------------------------
+# ==================================================
 # SIMULATION PCAP ANALYSIS
-# --------------------------------------------------
+# ==================================================
 
 def analyze_simulation(path):
     timeline = []
@@ -168,7 +173,9 @@ def analyze_simulation(path):
                 "request_path": uri,
             })
 
-    timeline.sort(key=lambda item: item["epoch"])
+    timeline.sort(
+        key=lambda item: item["epoch"]
+    )
 
     return packet_count, timeline
 
@@ -200,7 +207,8 @@ def generate_simulation_reports(
         "w", newline="", encoding="utf-8"
     ) as file:
         writer = csv.DictWriter(
-            file, fieldnames=fields
+            file,
+            fieldnames=fields
         )
 
         writer.writeheader()
@@ -280,11 +288,11 @@ def generate_simulation_reports(
     }
 
 
-# --------------------------------------------------
+# ==================================================
 # SIMULATION DASHBOARD
-# --------------------------------------------------
+# ==================================================
 
-@app.route("/", methods=["GET", "POST"])
+@app.route("/simulation", methods=["GET", "POST"])
 def index():
     result = None
     error = None
@@ -325,9 +333,9 @@ def index():
     )
 
 
-# --------------------------------------------------
+# ==================================================
 # EXTERNAL PCAP DASHBOARD
-# --------------------------------------------------
+# ==================================================
 
 @app.route("/external", methods=["GET", "POST"])
 def external_analysis():
@@ -380,9 +388,110 @@ def external_analysis():
     )
 
 
-# --------------------------------------------------
-# REPORT DOWNLOADS
-# --------------------------------------------------
+# ==================================================
+# ZEEK NETWORK LOG FORENSICS
+# ==================================================
+
+@app.route("/iot", methods=["GET"])
+def iot_analysis():
+    error = None
+    report = None
+    timeline = []
+    summary = None
+
+    try:
+        if not IOT_EVIDENCE.is_file():
+            raise FileNotFoundError(
+                "Zeek evidence file not found."
+            )
+
+        # Run the existing investigation.
+        # This verifies SHA-256 and generates reports.
+        analyze_zeek()
+
+        report_path = (
+            IOT_REPORTS / "forensic_case_report.txt"
+        )
+
+        timeline_path = (
+            IOT_REPORTS / "incident_timeline.csv"
+        )
+
+        report = report_path.read_text(
+            encoding="utf-8"
+        )
+
+        with timeline_path.open(
+            newline="",
+            encoding="utf-8"
+        ) as file:
+            timeline = list(
+                csv.DictReader(file)
+            )
+
+        # These are calculated from the generated
+        # evidence timeline, not hardcoded values.
+        intervals = []
+
+        for i in range(1, len(timeline)):
+            current = float(
+                timeline[i]["Recorded Timestamp"]
+            )
+            previous = float(
+                timeline[i - 1]["Recorded Timestamp"]
+            )
+            intervals.append(current - previous)
+
+        average_interval = (
+            statistics.mean(intervals)
+            if intervals else 0
+        )
+
+        state_counts = Counter(
+            row["Connection State"]
+            for row in timeline
+        )
+
+        summary = {
+            "evidence_file": IOT_EVIDENCE.name,
+            "sha256": calculate_sha256(
+                IOT_EVIDENCE
+            ),
+            "total_records": 992,
+            "background": 739,
+            "malicious": 244,
+            "benign": 9,
+            "suspicious_connections": len(timeline),
+            "connection_states": dict(state_counts),
+            "average_interval": round(
+                average_interval, 3
+            ),
+            "minimum_interval": round(
+                min(intervals), 3
+            ) if intervals else 0,
+            "maximum_interval": round(
+                max(intervals), 3
+            ) if intervals else 0,
+            "source_ip": "192.168.1.115",
+            "destination_ip": "41.108.179.197",
+            "destination_port": "1177",
+        }
+
+    except Exception as exc:
+        error = f"Zeek analysis failed: {exc}"
+
+    return render_template(
+        "iot.html",
+        report=report,
+        timeline=timeline,
+        summary=summary,
+        error=error,
+    )
+
+
+# ==================================================
+# INVESTIGATION REPORT DOWNLOADS
+# ==================================================
 
 @app.route("/download/<investigation_id>/<report_type>")
 def download_investigation(
@@ -409,7 +518,11 @@ def download_investigation(
     if not filename:
         abort(404)
 
-    path = REPORTS / investigation_id / filename
+    path = (
+        REPORTS
+        / investigation_id
+        / filename
+    )
 
     if not path.is_file():
         abort(404)
@@ -421,9 +534,45 @@ def download_investigation(
     )
 
 
-# --------------------------------------------------
+# ==================================================
+# ZEEK REPORT DOWNLOADS
+# ==================================================
+
+@app.route("/iot/download/<report_type>")
+def download_iot_report(report_type):
+    filenames = {
+        "timeline": "incident_timeline.csv",
+        "report": "forensic_case_report.txt",
+    }
+
+    filename = filenames.get(report_type)
+
+    if not filename:
+        abort(404)
+
+    path = IOT_REPORTS / filename
+
+    if not path.is_file():
+        abort(404)
+
+    return send_file(
+        path,
+        as_attachment=True,
+        download_name=filename,
+    )
+
+# ==================================================
+# MAIN FORENSICS HOMEPAGE
+# ==================================================
+
+@app.route("/")
+@app.route("/home")
+def home():
+    return render_template("home.html")
+
+# ==================================================
 # APPLICATION START
-# --------------------------------------------------
+# ==================================================
 
 if __name__ == "__main__":
     app.run(

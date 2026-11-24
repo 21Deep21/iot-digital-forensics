@@ -1,0 +1,244 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1">
+    <title>Zeek Log Forensics</title>
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+<main class="container">
+
+    <header>
+        <h1>Zeek Network Log Forensics</h1>
+        <p>NjRAT Network Incident Investigation</p>
+    </header>
+
+<nav class="navigation">
+    <a href="/">Home</a>
+    <a href="/external">PCAP Forensics</a>
+    <a href="/iot">Zeek Log Forensics</a>
+    <a href="/simulation">Simulation</a>
+</nav>
+
+    {% if error %}
+    <section class="panel">
+        <h2>Analysis Error</h2>
+        <p class="error">{{ error }}</p>
+    </section>
+    {% endif %}
+
+    {% if summary %}
+
+    <section class="panel">
+        <h2>Evidence Information</h2>
+        <p><strong>Case:</strong> ADF-NJRAT-001</p>
+        <p><strong>Dataset:</strong>
+            CTU-Malware-Capture-Botnet-230-1
+        </p>
+        <p><strong>Evidence File:</strong>
+            {{ summary.evidence_file }}
+        </p>
+        <p><strong>SHA-256:</strong></p>
+        <code class="hash">{{ summary.sha256 }}</code>
+        <p class="note">
+            Evidence integrity is verified against the
+            published Git LFS SHA-256 hash.
+        </p>
+    </section>
+
+    <section class="stats">
+        <div class="stat">
+            <span>Connection Records</span>
+            <strong>{{ summary.total_records }}</strong>
+        </div>
+
+        <div class="stat">
+            <span>Malicious-Labeled</span>
+            <strong>{{ summary.malicious }}</strong>
+        </div>
+
+        <div class="stat">
+            <span>Investigated Attempts</span>
+            <strong>
+                {{ summary.suspicious_connections }}
+            </strong>
+        </div>
+
+        <div class="stat">
+            <span>Average Interval</span>
+            <strong>
+                {{ summary.average_interval }}s
+            </strong>
+        </div>
+    </section>
+
+    <section class="panel">
+        <h2>Published Traffic Classification</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Classification</th>
+                    <th>Records</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Background</td>
+                    <td>{{ summary.background }}</td>
+                </tr>
+                <tr>
+                    <td>Malicious</td>
+                    <td>{{ summary.malicious }}</td>
+                </tr>
+                <tr>
+                    <td>Benign</td>
+                    <td>{{ summary.benign }}</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p class="note">
+            These classifications originate from the
+            published dataset and are not independently
+            generated malware detections.
+        </p>
+    </section>
+
+    <section class="panel">
+        <h2>Forensic Finding 01</h2>
+        <h3>Repeated TCP Connection Attempts</h3>
+
+        <p>
+            <strong>Source:</strong>
+            {{ summary.source_ip }}
+        </p>
+
+        <p>
+            <strong>Destination:</strong>
+            {{ summary.destination_ip }}:
+            {{ summary.destination_port }}
+        </p>
+
+        <p>
+            <strong>Matching records:</strong>
+            {{ summary.suspicious_connections }}
+        </p>
+
+        <p>
+            <strong>Connection states:</strong>
+            {{ summary.connection_states }}
+        </p>
+
+        <p>
+            <strong>Minimum interval:</strong>
+            {{ summary.minimum_interval }}s
+        </p>
+
+        <p>
+            <strong>Maximum interval:</strong>
+            {{ summary.maximum_interval }}s
+        </p>
+
+        <p class="note">
+            Zeek state S0 means a connection attempt
+            was observed without a corresponding response.
+            The repeated attempts suggest automated
+            retry behavior, but successful C2 communication
+            has not been established.
+        </p>
+    </section>
+
+    <section class="panel">
+        <h2>Reconstructed Connection Timeline</h2>
+
+        <p>
+            Showing the first 30 of
+            {{ timeline|length }} matching records.
+            Download the CSV for the complete timeline.
+        </p>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Evidence Line</th>
+                        <th>Timestamp</th>
+                        <th>Source Port</th>
+                        <th>Destination</th>
+                        <th>State</th>
+                        <th>Label</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for event in timeline[:30] %}
+                    <tr>
+                        <td>
+                            {{ event["Evidence Line"] }}
+                        </td>
+                        <td>
+                            {{ event["Recorded Timestamp"] }}
+                        </td>
+                        <td>
+                            {{ event["Source Port"] }}
+                        </td>
+                        <td>
+                            {{ event["Destination IP"] }}:
+                            {{ event["Destination Port"] }}
+                        </td>
+                        <td>
+                            {{ event["Connection State"] }}
+                        </td>
+                        <td>
+                            {{ event["Published Label"] }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="panel">
+        <h2>Forensic Reports</h2>
+
+        <div class="downloads">
+            <a href="{{ url_for('download_iot_report',
+                                report_type='timeline') }}">
+                Download Incident Timeline CSV
+            </a>
+
+            <a href="{{ url_for('download_iot_report',
+                                report_type='report') }}">
+                Download Forensic Case Report
+            </a>
+        </div>
+    </section>
+
+    <section class="panel">
+        <h2>Investigation Limitations</h2>
+        <p class="note">
+            The evidence is a published excerpt from an
+            NjRAT network-traffic scenario. The original
+            host is not verified as an IoT device.
+            Network logs alone cannot establish malware
+            execution or a successful C2 session.
+        </p>
+    </section>
+
+    {% endif %}
+
+    <footer>
+        Advanced Digital Forensics |
+        Evidence-Based Incident Reconstruction
+    </footer>
+
+</main>
+</body>
+</html>

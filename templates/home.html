@@ -1,0 +1,180 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1">
+    <title>Network Traffic & Log Forensics</title>
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+
+    <style>
+        .home-header {
+            text-align: center;
+            padding: 35px 10px;
+        }
+
+        .home-header h1 {
+            font-size: 30px;
+            margin-bottom: 12px;
+        }
+
+        .home-header p {
+            color: #64748b;
+        }
+
+        .case-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin: 25px 0;
+        }
+
+        .case-card {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 25px;
+        }
+
+        .case-card h2 {
+            margin-bottom: 12px;
+        }
+
+        .case-card p {
+            line-height: 1.7;
+            margin-bottom: 18px;
+        }
+
+        .case-link {
+            display: inline-block;
+            background: #2563eb;
+            color: white;
+            padding: 11px 18px;
+            border-radius: 6px;
+            text-decoration: none;
+        }
+
+        .case-link:hover {
+            background: #1d4ed8;
+        }
+
+        .methodology {
+            margin-top: 25px;
+            padding: 22px;
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+        }
+
+        .methodology p {
+            line-height: 1.8;
+        }
+
+        @media (max-width: 700px) {
+            .case-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+<main class="container">
+
+    <header class="home-header">
+        <h1>Network Traffic & Log Forensics</h1>
+        <p>Evidence-Based Incident Reconstruction</p>
+        <p>Advanced Digital Forensics Project</p>
+    </header>
+
+    <section class="case-grid">
+
+        <div class="case-card">
+            <h2>Case Study 01</h2>
+            <h3>PCAP Network Investigation</h3>
+
+            <p>
+                Examine captured network packets,
+                investigate HTTP transactions,
+                analyze TCP connections, and
+                reconstruct suspicious network activity.
+            </p>
+
+            <p>
+                <strong>Evidence:</strong>
+                2026-10-01 Traffic Analysis Exercise
+            </p>
+
+            <a class="case-link"
+               href="{{ url_for('external_analysis') }}">
+                Open PCAP Investigation
+            </a>
+        </div>
+
+        <div class="case-card">
+            <h2>Case Study 02</h2>
+            <h3>Zeek Network Log Investigation</h3>
+
+            <p>
+                Examine published NjRAT network logs,
+                investigate repeated TCP connection
+                attempts, and reconstruct an
+                evidence-backed timeline.
+            </p>
+
+            <p>
+                <strong>Evidence:</strong>
+                CTU-Malware-Capture-Botnet-230-1
+            </p>
+
+            <a class="case-link"
+               href="{{ url_for('iot_analysis') }}">
+                Open Zeek Investigation
+            </a>
+        </div>
+
+    </section>
+
+    <section class="methodology">
+        <h2>Digital Forensic Methodology</h2>
+
+        <p>
+            Evidence Acquisition →
+            Integrity Verification →
+            Examination →
+            Analysis →
+            Timeline Reconstruction →
+            Forensic Reporting
+        </p>
+
+        <p>
+            This project focuses on investigating
+            existing digital evidence rather than
+            generating malicious network activity.
+        </p>
+    </section>
+
+    <section class="methodology">
+        <h2>Supporting Validation Exercise</h2>
+
+        <p>
+            A controlled localhost phishing-to-C2
+            simulation was used to validate packet
+            capture and timeline reconstruction.
+        </p>
+
+        <a href="{{ url_for('index') }}">
+            Open Simulation Analysis
+        </a>
+    </section>
+
+    <footer>
+        Advanced Digital Forensics |
+        Evidence-Based Incident Reconstruction
+    </footer>
+
+</main>
+</body>
+</html>
